@@ -13,6 +13,8 @@ In aviation MRO operations, whether a part is repairable or treated as a one-tim
 In my role, I am the one applying those updates. Watching this process repeatedly raised a natural question: if the underlying decision follows a consistent pattern, could that pattern be learned? This project is a proof-of-concept exploring exactly that — not to replace the decision-making process, but to test whether the criteria behind it are predictable from the part's attributes alone.
 
 The labeling logic used here is grounded in real MRO industry practices: high-value, manufacturer-approved, non-tool components are more likely to be classified as repairable, while low-cost, unapproved, or tool items are more likely treated as consumables — consistent with standard rotable/repairable/consumable classification practices used across the industry.
+
+
 ---
 
 ## Dataset
