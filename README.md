@@ -8,10 +8,11 @@ A machine learning proof-of-concept that predicts whether an aircraft part shoul
 
 ## Why This Project
 
-In aviation MRO operations, technicians regularly review part attributes — cost, manufacturer approval status, material type — and manually decide whether a part is worth repairing or should be treated as a one-time-use consumable. This project explores whether a simple, transparent machine learning model can support that decision process.
+In aviation MRO operations, whether a part is repairable or treated as a one-time-use consumable is typically decided by finance and planning teams, based on factors like cost, manufacturer approval status, and material type. Once that decision is made, the resulting status is manually applied to each part in the system — often across long lists, one part at a time.
 
-The labeling logic is grounded in real MRO industry practices: high-value, manufacturer-approved, non-tool components are more likely to be classified as repairable, while low-cost, unapproved, or tool items are more likely treated as consumables — consistent with standard rotable/repairable/consumable classification practices used across the industry.
+In my role, I am the one applying those updates. Watching this process repeatedly raised a natural question: if the underlying decision follows a consistent pattern, could that pattern be learned? This project is a proof-of-concept exploring exactly that — not to replace the decision-making process, but to test whether the criteria behind it are predictable from the part's attributes alone.
 
+The labeling logic used here is grounded in real MRO industry practices: high-value, manufacturer-approved, non-tool components are more likely to be classified as repairable, while low-cost, unapproved, or tool items are more likely treated as consumables — consistent with standard rotable/repairable/consumable classification practices used across the industry.
 ---
 
 ## Dataset
