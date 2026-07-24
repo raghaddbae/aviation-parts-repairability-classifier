@@ -95,8 +95,6 @@ aviation-parts-repairability-classifier/
 ├── app.py                      # Streamlit web application
 ├── requirements.txt            # Python dependencies
 ├── model_evaluation.png        # Three-panel model evaluation chart
-├── feature_importance.png      # Feature importance chart
-├── confusion_matrix.png        # Confusion matrix
 └── README.md
 ```
 
