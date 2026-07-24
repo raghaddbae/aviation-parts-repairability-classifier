@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -18,14 +20,13 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp { background-color: #f8fafc; }
-    .block-container { padding: 2rem 3rem; }
+    .block-container { padding: 2rem 3rem 3rem 3rem; }
 
     .hero {
         background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
         border-radius: 16px;
         padding: 2rem 2.5rem;
         margin-bottom: 1.5rem;
-        color: white;
     }
     .hero h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: white; }
     .hero p { font-size: 0.95rem; color: #bfdbfe; margin: 0 0 1rem 0; line-height: 1.6; }
@@ -37,135 +38,96 @@ st.markdown("""
         color: #dbeafe;
     }
 
-    .card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid #e2e8f0;
-        margin-bottom: 1rem;
+    /* Fix preset buttons */
+    div[data-testid="column"] .stButton > button {
+        background: white !important;
+        color: #1d4ed8 !important;
+        border: 2px solid #1d4ed8 !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        width: 100% !important;
+        padding: 0.6rem 0.5rem !important;
+        white-space: nowrap !important;
     }
-    .card-title {
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: #1d4ed8;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 1rem;
+    div[data-testid="column"] .stButton > button:hover {
+        background: #eff6ff !important;
     }
+
+    /* Main predict button */
+    .predict-btn > div > button {
+        background: #1d4ed8 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+        width: 100% !important;
+        padding: 0.75rem !important;
+    }
+    .predict-btn > div > button:hover { background: #1e40af !important; }
 
     .result-green {
         background: #f0fdf4;
         border: 2px solid #16a34a;
         border-radius: 14px;
-        padding: 2rem;
+        padding: 1.5rem;
         text-align: center;
     }
     .result-red {
         background: #fff1f2;
         border: 2px solid #dc2626;
         border-radius: 14px;
-        padding: 2rem;
+        padding: 1.5rem;
         text-align: center;
     }
-    .result-title-green { font-size: 1.6rem; font-weight: 800; color: #15803d; margin: 0.5rem 0; }
-    .result-title-red { font-size: 1.6rem; font-weight: 800; color: #dc2626; margin: 0.5rem 0; }
-    .result-desc { font-size: 0.88rem; color: #64748b; margin-top: 0.5rem; line-height: 1.6; }
-
-    .metric-row { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; }
-    .metric-card {
-        flex: 1;
-        background: #f1f5f9;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        text-align: center;
-    }
-    .metric-val { font-size: 1.3rem; font-weight: 700; color: #1d4ed8; display: block; }
-    .metric-lbl { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-title-green { font-size: 1.5rem; font-weight: 800; color: #15803d; margin: 0.4rem 0; }
+    .result-title-red   { font-size: 1.5rem; font-weight: 800; color: #dc2626; margin: 0.4rem 0; }
+    .result-desc { font-size: 0.85rem; color: #64748b; margin-top: 0.4rem; line-height: 1.6; }
 
     .tag-pos {
         display: inline-block;
-        background: #f0fdf4;
-        border: 1px solid #86efac;
-        color: #166534;
-        border-radius: 20px;
-        padding: 0.3rem 0.9rem;
-        font-size: 0.82rem;
-        margin: 0.25rem;
-        font-weight: 500;
+        background: #f0fdf4; border: 1px solid #86efac;
+        color: #166534; border-radius: 20px;
+        padding: 0.3rem 0.9rem; font-size: 0.8rem;
+        margin: 0.2rem; font-weight: 500;
     }
     .tag-neg {
         display: inline-block;
-        background: #fff1f2;
-        border: 1px solid #fca5a5;
-        color: #991b1b;
-        border-radius: 20px;
-        padding: 0.3rem 0.9rem;
-        font-size: 0.82rem;
-        margin: 0.25rem;
-        font-weight: 500;
+        background: #fff1f2; border: 1px solid #fca5a5;
+        color: #991b1b; border-radius: 20px;
+        padding: 0.3rem 0.9rem; font-size: 0.8rem;
+        margin: 0.2rem; font-weight: 500;
     }
     .tag-neu {
         display: inline-block;
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        color: #475569;
-        border-radius: 20px;
-        padding: 0.3rem 0.9rem;
-        font-size: 0.82rem;
-        margin: 0.25rem;
-        font-weight: 500;
+        background: #f1f5f9; border: 1px solid #cbd5e1;
+        color: #475569; border-radius: 20px;
+        padding: 0.3rem 0.9rem; font-size: 0.8rem;
+        margin: 0.2rem; font-weight: 500;
     }
 
-    .bar-wrap {
-        background: #e2e8f0;
-        border-radius: 8px;
-        height: 12px;
-        margin: 0.3rem 0;
-        overflow: hidden;
-    }
-    .bar-green { background: linear-gradient(90deg, #16a34a, #4ade80); height: 100%; border-radius: 8px; }
-    .bar-red   { background: linear-gradient(90deg, #dc2626, #f87171); height: 100%; border-radius: 8px; }
-    .bar-blue  { background: linear-gradient(90deg, #1d4ed8, #60a5fa); height: 100%; border-radius: 8px; }
-
-    .sidebar-metric {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.4rem 0;
-        border-bottom: 1px solid #f1f5f9;
+    .sidebar-row {
+        display: flex; justify-content: space-between;
+        padding: 0.4rem 0; border-bottom: 1px solid #f1f5f9;
         font-size: 0.83rem;
     }
-    .sidebar-metric:last-child { border-bottom: none; }
+    .sidebar-row:last-child { border-bottom: none; }
     .s-key { color: #94a3b8; }
     .s-val { color: #1e293b; font-weight: 600; }
 
-    .stButton > button {
-        background: #1d4ed8 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        width: 100% !important;
-        padding: 0.65rem !important;
-    }
-    .stButton > button:hover { background: #1e40af !important; }
-
     [data-testid="stSidebar"] { background: white !important; border-right: 1px solid #e2e8f0; }
-
-    .footer {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e2e8f0;
-        text-align: center;
-        color: #94a3b8;
-        font-size: 0.78rem;
-        line-height: 1.8;
-    }
-    .footer a { color: #1d4ed8; text-decoration: none; }
-
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+
+    .footer {
+        margin-top: 2rem; padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        text-align: center; color: #94a3b8;
+        font-size: 0.78rem; line-height: 1.8;
+    }
+    .footer a { color: #1d4ed8; text-decoration: none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -210,52 +172,56 @@ def train_model():
                                                            class_weight='balanced',
                                                            random_state=42))])
     pipe.fit(X_train, y_train)
-    return pipe
+    return pipe, X, y
 
-model = train_model()
+model, X_data, y_data = train_model()
 
 # ── Sidebar ───────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### ⚙️ Model Performance")
-    for key, val in [
-        ("Algorithm", "Random Forest"),
-        ("Test Accuracy", "88%"),
-        ("CV F1 Score", "0.891 ± 0.023"),
-        ("Training Parts", "400"),
-        ("Validation", "5-Fold Stratified"),
-        ("Data", "Synthetic"),
-    ]:
-        st.markdown(f"""
-        <div class="sidebar-metric">
-            <span class="s-key">{key}</span>
-            <span class="s-val">{val}</span>
-        </div>""", unsafe_allow_html=True)
-
+    for k, v in [("Algorithm","Random Forest"),("Test Accuracy","88%"),
+                 ("CV F1 Score","0.891 ± 0.023"),("Training Parts","400"),
+                 ("Validation","5-Fold Stratified"),("Data","Synthetic")]:
+        st.markdown(f'<div class="sidebar-row"><span class="s-key">{k}</span><span class="s-val">{v}</span></div>',
+                    unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("### 📊 Class Recall")
 
-    st.markdown("**Unrepairable** — 95%")
-    st.markdown("""<div class="bar-wrap"><div class="bar-blue" style="width:95%"></div></div>""",
-                unsafe_allow_html=True)
-    st.markdown("**Repairable** — 76%")
-    st.markdown("""<div class="bar-wrap"><div class="bar-blue" style="width:76%"></div></div>""",
-                unsafe_allow_html=True)
+    # Model comparison chart in sidebar
+    st.markdown("### 📊 Model Comparison")
+    fig_sidebar = go.Figure(go.Bar(
+        x=["Logistic\nRegression", "Hist Gradient\nBoosting", "Random\nForest"],
+        y=[0.825, 0.875, 0.891],
+        marker_color=['#94a3b8', '#60a5fa', '#1d4ed8'],
+        text=["0.825", "0.875", "0.891"],
+        textposition='outside',
+        textfont=dict(size=11, color='#1e293b'),
+        width=0.5
+    ))
+    fig_sidebar.update_layout(
+        height=200, margin=dict(l=0, r=0, t=10, b=0),
+        paper_bgcolor='white', plot_bgcolor='white',
+        yaxis=dict(range=[0.7, 1.0], showgrid=True,
+                   gridcolor='#f1f5f9', tickfont=dict(size=9)),
+        xaxis=dict(tickfont=dict(size=9)),
+        showlegend=False
+    )
+    st.plotly_chart(fig_sidebar, use_container_width=True)
+    st.caption("CV F1 Score — 5-fold stratified cross-validation")
 
     st.markdown("---")
     st.markdown("### 🔗 Links")
-    st.markdown("[📁 GitHub Repository](https://github.com/raghaddbae/aviation-parts-repairability-classifier)")
+    st.markdown("[📁 GitHub](https://github.com/raghaddbae/aviation-parts-repairability-classifier)")
     st.markdown("[👤 LinkedIn](https://www.linkedin.com/in/raghadbaeshen)")
-    st.markdown("[🚀 Live App](https://aviation-parts-classifier.streamlit.app/)")
 
 # ── Hero ──────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
     <h1>✈️ Aviation Parts Repairability Classifier</h1>
-    <p>A machine learning proof-of-concept that predicts whether an aircraft part should be 
-    classified as <strong>repairable</strong> or <strong>unrepairable</strong>, 
+    <p>A machine learning proof-of-concept that predicts whether an aircraft part should be
+    classified as <strong>repairable</strong> or <strong>unrepairable</strong>,
     based on its operational attributes. Trained on synthetic data modeled on real MRO logic.</p>
     <div class="disclaimer-box">
-        ⚠️ <strong>Demonstration only.</strong> All data is synthetic and randomly generated. 
+        ⚠️ <strong>Demonstration only.</strong> All data is synthetic and randomly generated.
         This does not represent any real company, system, or dataset.
     </div>
 </div>
@@ -266,13 +232,17 @@ st.markdown("**🧪 Try a quick example:**")
 pc1, pc2, pc3, pc4 = st.columns(4)
 preset = None
 with pc1:
-    if st.button("💰 Expensive Component"): preset = {'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5}
+    if st.button("💰 Expensive Component", use_container_width=True):
+        preset = {'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5}
 with pc2:
-    if st.button("🔧 Cheap Tool"): preset = {'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2}
+    if st.button("🔧 Cheap Tool", use_container_width=True):
+        preset = {'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2}
 with pc3:
-    if st.button("📦 Standard Part"): preset = {'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0}
+    if st.button("📦 Standard Part", use_container_width=True):
+        preset = {'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0}
 with pc4:
-    if st.button("🗑️ Raw Consumable"): preset = {'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3}
+    if st.button("🗑️ Raw Consumable", use_container_width=True):
+        preset = {'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3}
 
 st.markdown("---")
 
@@ -291,8 +261,8 @@ with c1:
         ['SP','C','T','M','N'],
         index=['SP','C','T','M','N'].index(defaults['material_type']),
         help="SP=Standard Part · C=Component · T=Tool · M=Raw Material · N=Non-aircraft")
-    has_pma = st.selectbox("Manufacturer Approval (PMA)",
-        [1,0], index=[1,0].index(defaults['has_pma']),
+    has_pma = st.selectbox("Manufacturer Approval (PMA)", [1,0],
+        index=[1,0].index(defaults['has_pma']),
         format_func=lambda x: "✅ Has PMA" if x==1 else "❌ No PMA")
 
 with c2:
@@ -300,8 +270,8 @@ with c2:
         ['00-00','32-00','49-00','72-00','97-97','99-01'],
         index=['00-00','32-00','49-00','72-00','97-97','99-01'].index(defaults['ata_chapter']),
         help="Aircraft system classification code")
-    is_tool = st.selectbox("Is this a tool?",
-        [0,1], index=[0,1].index(defaults['is_tool']),
+    is_tool = st.selectbox("Is this a tool?", [0,1],
+        index=[0,1].index(defaults['is_tool']),
         format_func=lambda x: "🔧 Yes — it is a tool" if x==1 else "No — it is a part")
 
 with c3:
@@ -311,11 +281,11 @@ with c3:
     weight_kg = st.number_input("Weight (kg)",
         min_value=0.0, max_value=500.0,
         value=float(defaults['weight_kg']), step=0.1)
-    is_fixed_asset = st.selectbox("Fixed Asset?",
-        [0,1], index=[0,1].index(defaults['is_fixed_asset']),
+    is_fixed_asset = st.selectbox("Fixed Asset?", [0,1],
+        index=[0,1].index(defaults['is_fixed_asset']),
         format_func=lambda x: "Yes" if x==1 else "No")
 
-st.markdown("&nbsp;", unsafe_allow_html=True)
+st.markdown(" ")
 predict_clicked = st.button("🔍 Predict Repairability", use_container_width=True)
 
 # ── Result ────────────────────────────────────────────────
@@ -335,72 +305,120 @@ if predict_clicked or preset:
     st.markdown("---")
     st.markdown("**🎯 Prediction Result**")
 
-    r1, r2 = st.columns(2)
+    res_col, gauge_col, chart_col = st.columns([1.2, 1, 1])
 
-    with r1:
+    # Result card
+    with res_col:
         if prediction == 1:
             st.markdown(f"""
             <div class="result-green">
                 <div style="font-size:2.5rem">✅</div>
                 <div class="result-title-green">REPAIRABLE</div>
-                <div class="result-desc">This part is likely worth repairing rather than discarding as a consumable.</div>
+                <div class="result-desc">This part is likely worth repairing rather than discarding.</div>
             </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"""
             <div class="result-red">
                 <div style="font-size:2.5rem">❌</div>
                 <div class="result-title-red">UNREPAIRABLE</div>
-                <div class="result-desc">This part is likely treated as a one-time-use consumable — not worth repairing.</div>
+                <div class="result-desc">This part is likely treated as a one-time-use consumable.</div>
             </div>""", unsafe_allow_html=True)
 
-    with r2:
-        st.markdown("**📊 Confidence Breakdown**")
-        st.markdown(f"Repairable — **{conf_rep:.1f}%**")
-        st.markdown(f"""<div class="bar-wrap"><div class="bar-green" style="width:{conf_rep:.0f}%"></div></div>""",
-                    unsafe_allow_html=True)
-        st.markdown(f"Unrepairable — **{conf_unr:.1f}%**")
-        st.markdown(f"""<div class="bar-wrap"><div class="bar-red" style="width:{conf_unr:.0f}%"></div></div>""",
-                    unsafe_allow_html=True)
-        st.caption("The model assigns a probability to each class based on how closely this part's attributes match patterns learned during training.")
+    # Gauge chart
+    with gauge_col:
+        gauge_color = "#16a34a" if prediction == 1 else "#dc2626"
+        gauge_val = conf_rep if prediction == 1 else conf_unr
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=gauge_val,
+            number={'suffix': "%", 'font': {'size': 28, 'color': gauge_color}},
+            title={'text': "Model Confidence", 'font': {'size': 13, 'color': '#64748b'}},
+            gauge={
+                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#e2e8f0',
+                         'tickfont': {'size': 10}},
+                'bar': {'color': gauge_color},
+                'bgcolor': "white",
+                'borderwidth': 0,
+                'steps': [
+                    {'range': [0, 50], 'color': '#f8fafc'},
+                    {'range': [50, 75], 'color': '#f1f5f9'},
+                    {'range': [75, 100], 'color': '#e2e8f0'}
+                ],
+                'threshold': {
+                    'line': {'color': gauge_color, 'width': 3},
+                    'thickness': 0.75,
+                    'value': gauge_val
+                }
+            }
+        ))
+        fig_gauge.update_layout(
+            height=220, margin=dict(l=20, r=20, t=30, b=10),
+            paper_bgcolor='white'
+        )
+        st.plotly_chart(fig_gauge, use_container_width=True)
 
-    # ── Why this prediction ───────────────────────────────
+    # Attribute influence chart
+    with chart_col:
+        attr_names = ['Price > 40 SAR', 'Has PMA', 'Material Type', 'Is Tool']
+        attr_scores = [
+            1 if sales_price_sar > 40 else -1,
+            1 if has_pma == 1 else -1,
+            1 if material_type in ['C','SP'] else -0.5,
+            -2 if is_tool == 1 else 0
+        ]
+        attr_colors = ['#16a34a' if s > 0 else '#dc2626' if s < 0 else '#94a3b8'
+                       for s in attr_scores]
+
+        fig_bar = go.Figure(go.Bar(
+            x=attr_scores,
+            y=attr_names,
+            orientation='h',
+            marker_color=attr_colors,
+            text=[f"+{s}" if s > 0 else str(s) for s in attr_scores],
+            textposition='outside',
+            textfont=dict(size=11)
+        ))
+        fig_bar.update_layout(
+            title=dict(text="Attribute Influence Score", font=dict(size=13, color='#64748b')),
+            height=220,
+            margin=dict(l=10, r=40, t=40, b=10),
+            paper_bgcolor='white', plot_bgcolor='white',
+            xaxis=dict(range=[-2.5, 1.5], showgrid=True,
+                       gridcolor='#f1f5f9', zeroline=True,
+                       zerolinecolor='#e2e8f0', zerolinewidth=2,
+                       tickfont=dict(size=9)),
+            yaxis=dict(tickfont=dict(size=10)),
+            showlegend=False
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+    # Why this prediction tags
     st.markdown("**🧠 Why This Prediction?**")
-
-    tags = []
+    tags_html = ""
     if sales_price_sar > 40:
-        tags.append(('pos', f'💰 Price {sales_price_sar:.0f} SAR > 40 SAR threshold → pushes toward Repairable'))
+        tags_html += f'<span class="tag-pos">💰 Price {sales_price_sar:.0f} SAR > threshold → Repairable</span>'
     else:
-        tags.append(('neg', f'💰 Price {sales_price_sar:.0f} SAR ≤ 40 SAR → pushes toward Unrepairable'))
-
+        tags_html += f'<span class="tag-neg">💰 Price {sales_price_sar:.0f} SAR ≤ threshold → Unrepairable</span>'
     if has_pma == 1:
-        tags.append(('pos', '✅ Has manufacturer approval (PMA) → pushes toward Repairable'))
+        tags_html += '<span class="tag-pos">✅ Has PMA → Repairable</span>'
     else:
-        tags.append(('neg', '❌ No manufacturer approval → pushes toward Unrepairable'))
-
+        tags_html += '<span class="tag-neg">❌ No PMA → Unrepairable</span>'
     if material_type in ['C','SP']:
-        tags.append(('pos', f'📦 Material type {material_type} → pushes toward Repairable'))
+        tags_html += f'<span class="tag-pos">📦 {material_type} → Repairable</span>'
     else:
-        tags.append(('neu', f'📦 Material type {material_type} → neutral or slight push toward Unrepairable'))
-
+        tags_html += f'<span class="tag-neu">📦 {material_type} → Neutral</span>'
     if is_tool == 1:
-        tags.append(('neg', '🔧 Classified as a tool → strong override toward Unrepairable'))
+        tags_html += '<span class="tag-neg">🔧 Tool → Overrides all other factors</span>'
     else:
-        tags.append(('neu', '✓ Not a tool → no penalty'))
+        tags_html += '<span class="tag-neu">✓ Not a tool → No penalty</span>'
 
-    tag_html = "".join([
-        f'<span class="tag-pos">{t}</span>' if k=='pos'
-        else f'<span class="tag-neg">{t}</span>' if k=='neg'
-        else f'<span class="tag-neu">{t}</span>'
-        for k, t in tags
-    ])
-
-    st.markdown(tag_html, unsafe_allow_html=True)
-    st.caption("Note: ATA Chapter, weight, and fixed asset status also contribute to the model's internal decisions, though their influence is smaller than the four factors above.")
+    st.markdown(tags_html, unsafe_allow_html=True)
+    st.caption("ATA Chapter, weight, and fixed asset status also contribute to the model's decisions, though their influence is smaller than the four attributes above.")
 
 # ── Footer ────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-    Built by <a href="https://www.linkedin.com/in/raghadbaeshen">Raghad Baeshen</a> — 
+    Built by <a href="https://www.linkedin.com/in/raghadbaeshen">Raghad Baeshen</a> —
     IT Specialist in aviation MRO, exploring AI for enterprise operations.<br>
     All data is synthetic · Random Forest · Accuracy: 88% · CV F1: 0.891 ± 0.023<br>
     <a href="https://github.com/raghaddbae/aviation-parts-repairability-classifier">View full project on GitHub →</a>
