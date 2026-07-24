@@ -23,43 +23,28 @@ st.markdown("""
 
     .hero {
         background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-        border-radius: 16px;
-        padding: 2rem 2.5rem;
-        margin-bottom: 1.5rem;
+        border-radius: 16px; padding: 2rem 2.5rem; margin-bottom: 1.5rem;
     }
     .hero h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: white; }
     .hero p { font-size: 0.95rem; color: #bfdbfe; margin: 0 0 1rem 0; line-height: 1.6; }
     .disclaimer-box {
-        background: rgba(255,255,255,0.15);
-        border-radius: 8px;
-        padding: 0.6rem 1rem;
-        font-size: 0.82rem;
-        color: #dbeafe;
+        background: rgba(255,255,255,0.15); border-radius: 8px;
+        padding: 0.6rem 1rem; font-size: 0.82rem; color: #dbeafe;
     }
 
     div[data-testid="column"] .stButton > button {
-        background: white !important;
-        color: #1d4ed8 !important;
-        border: 2px solid #1d4ed8 !important;
-        border-radius: 10px !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        width: 100% !important;
-        padding: 0.6rem 0.5rem !important;
+        background: white !important; color: #1d4ed8 !important;
+        border: 2px solid #1d4ed8 !important; border-radius: 10px !important;
+        font-weight: 600 !important; font-size: 0.85rem !important;
+        width: 100% !important; padding: 0.6rem 0.5rem !important;
     }
-    div[data-testid="column"] .stButton > button:hover {
-        background: #eff6ff !important;
-    }
+    div[data-testid="column"] .stButton > button:hover { background: #eff6ff !important; }
 
     .stButton > button {
-        background: #1d4ed8 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-weight: 700 !important;
-        font-size: 1rem !important;
-        width: 100% !important;
-        padding: 0.75rem !important;
+        background: #1d4ed8 !important; color: white !important;
+        border: none !important; border-radius: 10px !important;
+        font-weight: 700 !important; font-size: 1rem !important;
+        width: 100% !important; padding: 0.75rem !important;
     }
     .stButton > button:hover { background: #1e40af !important; }
 
@@ -91,36 +76,20 @@ st.markdown("""
         font-size: 0.8rem; margin: 0.2rem; font-weight: 500;
     }
 
-    /* Prediction history cards */
-    .hist-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.75rem 1rem;
-        margin-bottom: 0.6rem;
-        font-size: 0.8rem;
-    }
-    .hist-card-rep {
-        border-left: 4px solid #16a34a;
-    }
-    .hist-card-unr {
-        border-left: 4px solid #dc2626;
-    }
+    .hist-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; font-size: 0.8rem; }
+    .hist-card-rep { border-left: 4px solid #16a34a; }
+    .hist-card-unr { border-left: 4px solid #dc2626; }
     .hist-label-rep { color: #15803d; font-weight: 700; font-size: 0.85rem; }
     .hist-label-unr { color: #dc2626; font-weight: 700; font-size: 0.85rem; }
     .hist-attr { color: #94a3b8; font-size: 0.75rem; margin-top: 0.3rem; line-height: 1.6; }
     .hist-conf { color: #64748b; font-size: 0.75rem; margin-top: 0.2rem; }
 
     [data-testid="stSidebar"] { background: white !important; border-right: 1px solid #e2e8f0; }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
 
     .footer {
-        margin-top: 2rem; padding-top: 1.5rem;
-        border-top: 1px solid #e2e8f0;
-        text-align: center; color: #94a3b8;
-        font-size: 0.78rem; line-height: 1.8;
+        margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;
+        text-align: center; color: #94a3b8; font-size: 0.78rem; line-height: 1.8;
     }
     .footer a { color: #1d4ed8; text-decoration: none; }
 </style>
@@ -171,9 +140,13 @@ def train_model():
 
 model = train_model()
 
-# ── Session state for prediction history ─────────────────
+# ── Session state ─────────────────────────────────────────
 if 'history' not in st.session_state:
     st.session_state.history = []
+
+# Store preset values in session state so they persist across reruns
+if 'preset_values' not in st.session_state:
+    st.session_state.preset_values = None
 
 # ── Sidebar — Prediction History ─────────────────────────
 with st.sidebar:
@@ -181,7 +154,7 @@ with st.sidebar:
 
     if len(st.session_state.history) == 0:
         st.markdown("""
-        <div style="color:#94a3b8; font-size:0.82rem; 
+        <div style="color:#94a3b8; font-size:0.82rem;
                     text-align:center; padding:2rem 0; line-height:1.8;">
             No predictions yet.<br>
             Enter part attributes and<br>
@@ -189,33 +162,29 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
     else:
-        # Summary counts
         total = len(st.session_state.history)
         rep_count = sum(1 for h in st.session_state.history if h['prediction'] == 1)
         unr_count = total - rep_count
 
         col_a, col_b, col_c = st.columns(3)
         col_a.metric("Total", total)
-        col_b.metric("✅ Rep.", rep_count)
-        col_c.metric("❌ Unr.", unr_count)
+        col_b.metric("✅", rep_count)
+        col_c.metric("❌", unr_count)
 
         st.markdown("---")
 
-        # Clear button
         if st.button("🗑️ Clear History", use_container_width=True):
             st.session_state.history = []
             st.rerun()
 
         st.markdown("---")
 
-        # History cards — most recent first
-        for i, entry in enumerate(reversed(st.session_state.history)):
+        for entry in reversed(st.session_state.history):
             card_class = "hist-card hist-card-rep" if entry['prediction'] == 1 else "hist-card hist-card-unr"
             label_class = "hist-label-rep" if entry['prediction'] == 1 else "hist-label-unr"
             label_text = "✅ REPAIRABLE" if entry['prediction'] == 1 else "❌ UNREPAIRABLE"
             pma_text = "Has PMA" if entry['has_pma'] == 1 else "No PMA"
             tool_text = "Tool" if entry['is_tool'] == 1 else "Not a tool"
-
             st.markdown(f"""
             <div class="{card_class}">
                 <div class="{label_class}">{label_text}</div>
@@ -224,9 +193,7 @@ with st.sidebar:
                     {entry['sales_price_sar']:.0f} SAR · {entry['weight_kg']} kg<br>
                     {pma_text} · {tool_text}
                 </div>
-                <div class="hist-conf">
-                    Confidence: {entry['confidence']:.1f}%
-                </div>
+                <div class="hist-conf">Confidence: {entry['confidence']:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -249,27 +216,44 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Presets ───────────────────────────────────────────────
+# ── Presets — only fill the form, never auto-predict ─────
 st.markdown("**🧪 Try a quick example:**")
 pc1, pc2, pc3, pc4 = st.columns(4)
-preset = None
+
 with pc1:
     if st.button("💰 Expensive Component", use_container_width=True):
-        preset = {'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5}
+        st.session_state.preset_values = {
+            'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,
+            'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5
+        }
+        st.rerun()
 with pc2:
     if st.button("🔧 Cheap Tool", use_container_width=True):
-        preset = {'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2}
+        st.session_state.preset_values = {
+            'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,
+            'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2
+        }
+        st.rerun()
 with pc3:
     if st.button("📦 Standard Part", use_container_width=True):
-        preset = {'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0}
+        st.session_state.preset_values = {
+            'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,
+            'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0
+        }
+        st.rerun()
 with pc4:
     if st.button("🗑️ Raw Consumable", use_container_width=True):
-        preset = {'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3}
+        st.session_state.preset_values = {
+            'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,
+            'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3
+        }
+        st.rerun()
 
 st.markdown("---")
 
 # ── Inputs ────────────────────────────────────────────────
-defaults = preset if preset else {
+# Use preset values if set, otherwise use defaults
+p = st.session_state.preset_values or {
     'material_type':'SP','has_pma':1,'is_tool':0,
     'is_fixed_asset':0,'ata_chapter':'49-00',
     'sales_price_sar':50.0,'weight_kg':2.0
@@ -281,37 +265,37 @@ c1, c2, c3 = st.columns(3)
 with c1:
     material_type = st.selectbox("Material Type",
         ['SP','C','T','M','N'],
-        index=['SP','C','T','M','N'].index(defaults['material_type']),
+        index=['SP','C','T','M','N'].index(p['material_type']),
         help="SP=Standard Part · C=Component · T=Tool · M=Raw Material · N=Non-aircraft")
     has_pma = st.selectbox("Manufacturer Approval (PMA)", [1,0],
-        index=[1,0].index(defaults['has_pma']),
+        index=[1,0].index(p['has_pma']),
         format_func=lambda x: "✅ Has PMA" if x==1 else "❌ No PMA")
 
 with c2:
     ata_chapter = st.selectbox("ATA Chapter",
         ['00-00','32-00','49-00','72-00','97-97','99-01'],
-        index=['00-00','32-00','49-00','72-00','97-97','99-01'].index(defaults['ata_chapter']),
+        index=['00-00','32-00','49-00','72-00','97-97','99-01'].index(p['ata_chapter']),
         help="Aircraft system classification code")
     is_tool = st.selectbox("Is this a tool?", [0,1],
-        index=[0,1].index(defaults['is_tool']),
+        index=[0,1].index(p['is_tool']),
         format_func=lambda x: "🔧 Yes — it is a tool" if x==1 else "No — it is a part")
 
 with c3:
     sales_price_sar = st.number_input("Sales Price (SAR)",
         min_value=0.0, max_value=10000.0,
-        value=float(defaults['sales_price_sar']), step=1.0)
+        value=float(p['sales_price_sar']), step=1.0)
     weight_kg = st.number_input("Weight (kg)",
         min_value=0.0, max_value=500.0,
-        value=float(defaults['weight_kg']), step=0.1)
+        value=float(p['weight_kg']), step=0.1)
     is_fixed_asset = st.selectbox("Fixed Asset?", [0,1],
-        index=[0,1].index(defaults['is_fixed_asset']),
+        index=[0,1].index(p['is_fixed_asset']),
         format_func=lambda x: "Yes" if x==1 else "No")
 
 st.markdown(" ")
 predict_clicked = st.button("🔍 Predict Repairability", use_container_width=True)
 
-# ── Result ────────────────────────────────────────────────
-if predict_clicked or preset:
+# ── Result — ONLY runs when Predict is clicked ────────────
+if predict_clicked:
     input_df = pd.DataFrame([{
         'material_type': material_type, 'has_pma': has_pma,
         'is_tool': is_tool, 'is_fixed_asset': is_fixed_asset,
@@ -327,15 +311,11 @@ if predict_clicked or preset:
 
     # Save to history
     st.session_state.history.append({
-        'prediction': prediction,
-        'confidence': confidence,
-        'material_type': material_type,
-        'has_pma': has_pma,
-        'is_tool': is_tool,
-        'is_fixed_asset': is_fixed_asset,
+        'prediction': prediction, 'confidence': confidence,
+        'material_type': material_type, 'has_pma': has_pma,
+        'is_tool': is_tool, 'is_fixed_asset': is_fixed_asset,
         'ata_chapter': ata_chapter,
-        'sales_price_sar': sales_price_sar,
-        'weight_kg': weight_kg
+        'sales_price_sar': sales_price_sar, 'weight_kg': weight_kg
     })
 
     st.markdown("---")
@@ -343,28 +323,22 @@ if predict_clicked or preset:
 
     res_col, gauge_col, chart_col = st.columns([1.2, 1, 1])
 
-    # Result card
     with res_col:
         if prediction == 1:
-            st.markdown(f"""
+            st.markdown("""
             <div class="result-green">
                 <div style="font-size:2.5rem">✅</div>
                 <div class="result-title-green">REPAIRABLE</div>
-                <div class="result-desc">
-                    This part is likely worth repairing rather than discarding as a consumable.
-                </div>
+                <div class="result-desc">This part is likely worth repairing rather than discarding as a consumable.</div>
             </div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""
+            st.markdown("""
             <div class="result-red">
                 <div style="font-size:2.5rem">❌</div>
                 <div class="result-title-red">UNREPAIRABLE</div>
-                <div class="result-desc">
-                    This part is likely treated as a one-time-use consumable — not worth repairing.
-                </div>
+                <div class="result-desc">This part is likely treated as a one-time-use consumable — not worth repairing.</div>
             </div>""", unsafe_allow_html=True)
 
-    # Gauge chart
     with gauge_col:
         gauge_color = "#16a34a" if prediction == 1 else "#dc2626"
         fig_gauge = go.Figure(go.Indicator(
@@ -376,8 +350,7 @@ if predict_clicked or preset:
                 'axis': {'range': [0, 100], 'tickwidth': 1,
                          'tickcolor': '#e2e8f0', 'tickfont': {'size': 10}},
                 'bar': {'color': gauge_color},
-                'bgcolor': "white",
-                'borderwidth': 0,
+                'bgcolor': "white", 'borderwidth': 0,
                 'steps': [
                     {'range': [0, 50],  'color': '#f8fafc'},
                     {'range': [50, 75], 'color': '#f1f5f9'},
@@ -391,25 +364,21 @@ if predict_clicked or preset:
         )
         st.plotly_chart(fig_gauge, use_container_width=True)
 
-    # Attribute influence chart
     with chart_col:
-        attr_names = ['Price > 40 SAR', 'Has PMA', 'Material Type', 'Is Tool']
+        attr_names  = ['Price > 40 SAR', 'Has PMA', 'Material Type', 'Is Tool']
         attr_scores = [
             1   if sales_price_sar > 40        else -1,
             1   if has_pma == 1               else -1,
             1   if material_type in ['C','SP'] else -0.5,
             -2  if is_tool == 1               else 0
         ]
-        attr_colors = [
-            '#16a34a' if s > 0 else '#dc2626' if s < 0 else '#94a3b8'
-            for s in attr_scores
-        ]
+        attr_colors = ['#16a34a' if s > 0 else '#dc2626' if s < 0 else '#94a3b8'
+                       for s in attr_scores]
         fig_bar = go.Figure(go.Bar(
             x=attr_scores, y=attr_names, orientation='h',
             marker_color=attr_colors,
             text=[f"+{s}" if s > 0 else str(s) for s in attr_scores],
-            textposition='outside',
-            textfont=dict(size=11)
+            textposition='outside', textfont=dict(size=11)
         ))
         fig_bar.update_layout(
             title=dict(text="Attribute Influence Score",
@@ -425,7 +394,7 @@ if predict_clicked or preset:
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Why this prediction tags
+    # Why this prediction
     st.markdown("**🧠 Why This Prediction?**")
     tags_html = ""
     tags_html += f'<span class="tag-pos">💰 Price {sales_price_sar:.0f} SAR > threshold → Repairable</span>' \
@@ -438,7 +407,6 @@ if predict_clicked or preset:
         f'<span class="tag-neu">📦 {material_type} → Neutral</span>'
     tags_html += '<span class="tag-neg">🔧 Tool → Overrides all other factors</span>' \
         if is_tool == 1 else '<span class="tag-neu">✓ Not a tool → No penalty</span>'
-
     st.markdown(tags_html, unsafe_allow_html=True)
     st.caption("ATA Chapter, weight, and fixed asset status also contribute to the model's decisions, though their influence is smaller than the four attributes above.")
 
@@ -448,7 +416,6 @@ st.markdown("""
     Built by <a href="https://www.linkedin.com/in/raghadbaeshen">Raghad Baeshen</a> —
     IT Specialist in aviation MRO, exploring AI for enterprise operations.<br>
     All data is synthetic · Random Forest · Accuracy: 88% · CV F1: 0.891 ± 0.023<br>
-    <a href="https://github.com/raghaddbae/aviation-parts-repairability-classifier">
-    View full project on GitHub →</a>
+    <a href="https://github.com/raghaddbae/aviation-parts-repairability-classifier">View full project on GitHub →</a>
 </div>
 """, unsafe_allow_html=True)
