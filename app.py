@@ -9,262 +9,160 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
-# ── Page config ───────────────────────────────────────────
 st.set_page_config(
     page_title="Aviation Parts Repairability Classifier",
     page_icon="✈️",
     layout="wide"
 )
 
-# ── Custom CSS ────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Clean background */
-    .stApp { background-color: #0f1117; }
-    
-    /* Main content area */
+    .stApp { background-color: #f8fafc; }
     .block-container { padding: 2rem 3rem; }
 
-    /* Hero header */
     .hero {
-        background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
-        border: 1px solid #2563eb30;
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
         border-radius: 16px;
-        padding: 2.5rem 3rem;
-        margin-bottom: 2rem;
+        padding: 2rem 2.5rem;
+        margin-bottom: 1.5rem;
+        color: white;
     }
-    .hero-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #f1f5f9;
-        margin: 0 0 0.5rem 0;
-        letter-spacing: -0.02em;
-    }
-    .hero-subtitle {
-        font-size: 1rem;
-        color: #94a3b8;
-        margin: 0 0 1.5rem 0;
-        line-height: 1.6;
-    }
-    .disclaimer {
-        background: #1e2030;
-        border-left: 3px solid #f59e0b;
-        border-radius: 0 8px 8px 0;
-        padding: 0.75rem 1rem;
+    .hero h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: white; }
+    .hero p { font-size: 0.95rem; color: #bfdbfe; margin: 0 0 1rem 0; line-height: 1.6; }
+    .disclaimer-box {
+        background: rgba(255,255,255,0.15);
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
         font-size: 0.82rem;
-        color: #94a3b8;
+        color: #dbeafe;
     }
 
-    /* Metric cards */
-    .metric-row {
-        display: flex;
-        gap: 1rem;
-        margin: 1.5rem 0;
-    }
-    .metric-card {
-        background: #1a1f2e;
-        border: 1px solid #2563eb20;
-        border-radius: 10px;
-        padding: 1rem 1.5rem;
-        flex: 1;
-        text-align: center;
-    }
-    .metric-value {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #2563eb;
-        display: block;
-    }
-    .metric-label {
-        font-size: 0.75rem;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Section labels */
-    .section-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #2563eb;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    /* Input card */
-    .input-card {
-        background: #1a1f2e;
-        border: 1px solid #2563eb20;
+    .card {
+        background: white;
         border-radius: 12px;
         padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+    }
+    .card-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #1d4ed8;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 1rem;
     }
 
-    /* Result cards */
-    .result-repairable {
-        background: linear-gradient(135deg, #052e16 0%, #0f2d1a 100%);
-        border: 1px solid #16a34a;
-        border-radius: 16px;
+    .result-green {
+        background: #f0fdf4;
+        border: 2px solid #16a34a;
+        border-radius: 14px;
         padding: 2rem;
         text-align: center;
     }
-    .result-unrepairable {
-        background: linear-gradient(135deg, #2d1515 0%, #1f0f0f 100%);
-        border: 1px solid #dc2626;
-        border-radius: 16px;
+    .result-red {
+        background: #fff1f2;
+        border: 2px solid #dc2626;
+        border-radius: 14px;
         padding: 2rem;
         text-align: center;
     }
-    .result-label {
-        font-size: 1.8rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        margin: 0.5rem 0;
-    }
-    .result-label-green { color: #4ade80; }
-    .result-label-red { color: #f87171; }
-    .result-desc {
-        font-size: 0.88rem;
-        color: #94a3b8;
-        line-height: 1.6;
-        margin-top: 0.75rem;
-    }
+    .result-title-green { font-size: 1.6rem; font-weight: 800; color: #15803d; margin: 0.5rem 0; }
+    .result-title-red { font-size: 1.6rem; font-weight: 800; color: #dc2626; margin: 0.5rem 0; }
+    .result-desc { font-size: 0.88rem; color: #64748b; margin-top: 0.5rem; line-height: 1.6; }
 
-    /* Confidence bar */
-    .conf-bar-container {
-        background: #0f1117;
+    .metric-row { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .metric-card {
+        flex: 1;
+        background: #f1f5f9;
         border-radius: 8px;
-        height: 10px;
-        margin: 0.4rem 0 0.2rem 0;
+        padding: 0.75rem 1rem;
+        text-align: center;
+    }
+    .metric-val { font-size: 1.3rem; font-weight: 700; color: #1d4ed8; display: block; }
+    .metric-lbl { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .tag-pos {
+        display: inline-block;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        color: #166534;
+        border-radius: 20px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.82rem;
+        margin: 0.25rem;
+        font-weight: 500;
+    }
+    .tag-neg {
+        display: inline-block;
+        background: #fff1f2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
+        border-radius: 20px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.82rem;
+        margin: 0.25rem;
+        font-weight: 500;
+    }
+    .tag-neu {
+        display: inline-block;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        border-radius: 20px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.82rem;
+        margin: 0.25rem;
+        font-weight: 500;
+    }
+
+    .bar-wrap {
+        background: #e2e8f0;
+        border-radius: 8px;
+        height: 12px;
+        margin: 0.3rem 0;
         overflow: hidden;
     }
-    .conf-bar-fill-green {
-        background: linear-gradient(90deg, #16a34a, #4ade80);
-        height: 100%;
-        border-radius: 8px;
-        transition: width 0.5s ease;
-    }
-    .conf-bar-fill-blue {
-        background: linear-gradient(90deg, #1d4ed8, #2563eb);
-        height: 100%;
-        border-radius: 8px;
-    }
-    .conf-bar-fill-red {
-        background: linear-gradient(90deg, #dc2626, #f87171);
-        height: 100%;
-        border-radius: 8px;
-    }
-    .conf-label {
+    .bar-green { background: linear-gradient(90deg, #16a34a, #4ade80); height: 100%; border-radius: 8px; }
+    .bar-red   { background: linear-gradient(90deg, #dc2626, #f87171); height: 100%; border-radius: 8px; }
+    .bar-blue  { background: linear-gradient(90deg, #1d4ed8, #60a5fa); height: 100%; border-radius: 8px; }
+
+    .sidebar-metric {
         display: flex;
         justify-content: space-between;
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-top: 0.2rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.83rem;
     }
+    .sidebar-metric:last-child { border-bottom: none; }
+    .s-key { color: #94a3b8; }
+    .s-val { color: #1e293b; font-weight: 600; }
 
-    /* Feature influence tags */
-    .tag-positive {
-        display: inline-block;
-        background: #052e16;
-        border: 1px solid #16a34a40;
-        color: #4ade80;
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.78rem;
-        margin: 0.2rem;
-    }
-    .tag-negative {
-        display: inline-block;
-        background: #2d1515;
-        border: 1px solid #dc262640;
-        color: #f87171;
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.78rem;
-        margin: 0.2rem;
-    }
-    .tag-neutral {
-        display: inline-block;
-        background: #1a1f2e;
-        border: 1px solid #2563eb30;
-        color: #94a3b8;
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.78rem;
-        margin: 0.2rem;
-    }
-
-    /* Predict button */
     .stButton > button {
-        background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+        background: #1d4ed8 !important;
         color: white !important;
         border: none !important;
         border-radius: 10px !important;
-        padding: 0.75rem 2rem !important;
         font-weight: 600 !important;
-        font-size: 1rem !important;
+        font-size: 0.95rem !important;
         width: 100% !important;
-        transition: all 0.2s ease !important;
+        padding: 0.65rem !important;
     }
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #1e40af, #1d4ed8) !important;
-        transform: translateY(-1px) !important;
-    }
+    .stButton > button:hover { background: #1e40af !important; }
 
-    /* Preset buttons */
-    .stButton > button[kind="secondary"] {
-        background: #1a1f2e !important;
-        border: 1px solid #2563eb30 !important;
-        color: #94a3b8 !important;
-        font-size: 0.82rem !important;
-        padding: 0.4rem 0.8rem !important;
-    }
+    [data-testid="stSidebar"] { background: white !important; border-right: 1px solid #e2e8f0; }
 
-    /* Sidebar */
-    .css-1d391kg, [data-testid="stSidebar"] {
-        background: #0d1117 !important;
-    }
-    .sidebar-card {
-        background: #1a1f2e;
-        border: 1px solid #2563eb20;
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-    .sidebar-title {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #2563eb;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 0.75rem;
-    }
-    .sidebar-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #2563eb10;
-        font-size: 0.82rem;
-    }
-    .sidebar-row:last-child { border-bottom: none; }
-    .sidebar-key { color: #64748b; }
-    .sidebar-val { color: #f1f5f9; font-weight: 600; }
-
-    /* Footer */
     .footer {
-        margin-top: 3rem;
+        margin-top: 2rem;
         padding-top: 1.5rem;
-        border-top: 1px solid #2563eb15;
+        border-top: 1px solid #e2e8f0;
         text-align: center;
-        color: #475569;
+        color: #94a3b8;
         font-size: 0.78rem;
         line-height: 1.8;
     }
-    .footer a { color: #2563eb; text-decoration: none; }
+    .footer a { color: #1d4ed8; text-decoration: none; }
 
-    /* Hide streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -316,273 +214,195 @@ def train_model():
 
 model = train_model()
 
-# ── Sidebar — Model Info ──────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
-    <div class="sidebar-card">
-        <div class="sidebar-title">⚙️ Model Performance</div>
-        <div class="sidebar-row"><span class="sidebar-key">Algorithm</span><span class="sidebar-val">Random Forest</span></div>
-        <div class="sidebar-row"><span class="sidebar-key">Test Accuracy</span><span class="sidebar-val">88%</span></div>
-        <div class="sidebar-row"><span class="sidebar-key">CV F1 Score</span><span class="sidebar-val">0.891 ± 0.023</span></div>
-        <div class="sidebar-row"><span class="sidebar-key">Training Parts</span><span class="sidebar-val">400</span></div>
-        <div class="sidebar-row"><span class="sidebar-key">Validation</span><span class="sidebar-val">5-Fold Stratified</span></div>
-        <div class="sidebar-row"><span class="sidebar-key">Data Type</span><span class="sidebar-val">Synthetic</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### ⚙️ Model Performance")
+    for key, val in [
+        ("Algorithm", "Random Forest"),
+        ("Test Accuracy", "88%"),
+        ("CV F1 Score", "0.891 ± 0.023"),
+        ("Training Parts", "400"),
+        ("Validation", "5-Fold Stratified"),
+        ("Data", "Synthetic"),
+    ]:
+        st.markdown(f"""
+        <div class="sidebar-metric">
+            <span class="s-key">{key}</span>
+            <span class="s-val">{val}</span>
+        </div>""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="sidebar-card">
-        <div class="sidebar-title">📊 Class Performance</div>
-        <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:0.5rem;">Unrepairable</div>
-        <div class="conf-bar-container"><div class="conf-bar-fill-blue" style="width:95%"></div></div>
-        <div class="conf-label"><span>Recall</span><span style="color:#f1f5f9">95%</span></div>
-        <div style="font-size:0.78rem; color:#94a3b8; margin:0.75rem 0 0.5rem 0;">Repairable</div>
-        <div class="conf-bar-container"><div class="conf-bar-fill-blue" style="width:76%"></div></div>
-        <div class="conf-label"><span>Recall</span><span style="color:#f1f5f9">76%</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 📊 Class Recall")
 
-    st.markdown("""
-    <div class="sidebar-card">
-        <div class="sidebar-title">🔗 Links</div>
-        <div style="font-size:0.82rem; line-height:2;">
-            <a href="https://github.com/raghaddbae/aviation-parts-repairability-classifier" 
-               style="color:#2563eb; text-decoration:none;">📁 GitHub Repository</a><br>
-            <a href="https://www.linkedin.com/in/raghadbaeshen" 
-               style="color:#2563eb; text-decoration:none;">👤 LinkedIn</a>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("**Unrepairable** — 95%")
+    st.markdown("""<div class="bar-wrap"><div class="bar-blue" style="width:95%"></div></div>""",
+                unsafe_allow_html=True)
+    st.markdown("**Repairable** — 76%")
+    st.markdown("""<div class="bar-wrap"><div class="bar-blue" style="width:76%"></div></div>""",
+                unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 🔗 Links")
+    st.markdown("[📁 GitHub Repository](https://github.com/raghaddbae/aviation-parts-repairability-classifier)")
+    st.markdown("[👤 LinkedIn](https://www.linkedin.com/in/raghadbaeshen)")
+    st.markdown("[🚀 Live App](https://aviation-parts-classifier.streamlit.app/)")
 
 # ── Hero ──────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <p class="hero-title">✈️ Aviation Parts Repairability Classifier</p>
-    <p class="hero-subtitle">
-        A machine learning proof-of-concept that predicts whether an aircraft part 
-        should be classified as <strong style="color:#f1f5f9">repairable</strong> or 
-        <strong style="color:#f1f5f9">unrepairable</strong>, based on its operational attributes.
-        Trained on synthetic data modeled on real MRO classification logic.
-    </p>
-    <div class="disclaimer">
+    <h1>✈️ Aviation Parts Repairability Classifier</h1>
+    <p>A machine learning proof-of-concept that predicts whether an aircraft part should be 
+    classified as <strong>repairable</strong> or <strong>unrepairable</strong>, 
+    based on its operational attributes. Trained on synthetic data modeled on real MRO logic.</p>
+    <div class="disclaimer-box">
         ⚠️ <strong>Demonstration only.</strong> All data is synthetic and randomly generated. 
         This does not represent any real company, system, or dataset.
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Quick Presets ─────────────────────────────────────────
-st.markdown('<span class="section-label">🧪 Quick Test — Try an Example</span>', unsafe_allow_html=True)
-
-preset_cols = st.columns(4)
+# ── Presets ───────────────────────────────────────────────
+st.markdown("**🧪 Try a quick example:**")
+pc1, pc2, pc3, pc4 = st.columns(4)
 preset = None
-with preset_cols[0]:
-    if st.button("💰 Expensive Component"):
-        preset = {'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,
-                  'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5}
-with preset_cols[1]:
-    if st.button("🔧 Cheap Tool"):
-        preset = {'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,
-                  'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2}
-with preset_cols[2]:
-    if st.button("📦 Standard Part"):
-        preset = {'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,
-                  'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0}
-with preset_cols[3]:
-    if st.button("🗑️ Consumable"):
-        preset = {'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,
-                  'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3}
+with pc1:
+    if st.button("💰 Expensive Component"): preset = {'material_type':'C','has_pma':1,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'72-00','sales_price_sar':120.0,'weight_kg':3.5}
+with pc2:
+    if st.button("🔧 Cheap Tool"): preset = {'material_type':'T','has_pma':0,'is_tool':1,'is_fixed_asset':0,'ata_chapter':'00-00','sales_price_sar':15.0,'weight_kg':1.2}
+with pc3:
+    if st.button("📦 Standard Part"): preset = {'material_type':'SP','has_pma':1,'is_tool':0,'is_fixed_asset':1,'ata_chapter':'32-00','sales_price_sar':85.0,'weight_kg':6.0}
+with pc4:
+    if st.button("🗑️ Raw Consumable"): preset = {'material_type':'M','has_pma':0,'is_tool':0,'is_fixed_asset':0,'ata_chapter':'97-97','sales_price_sar':8.0,'weight_kg':0.3}
 
-st.markdown("<div style='margin:1.5rem 0'></div>", unsafe_allow_html=True)
+st.markdown("---")
 
-# ── Input Form ────────────────────────────────────────────
-st.markdown('<span class="section-label">📋 Part Attributes</span>', unsafe_allow_html=True)
-
+# ── Inputs ────────────────────────────────────────────────
 defaults = preset if preset else {
-    'material_type': 'SP', 'has_pma': 1, 'is_tool': 0,
-    'is_fixed_asset': 0, 'ata_chapter': '49-00',
-    'sales_price_sar': 50.0, 'weight_kg': 2.0
+    'material_type':'SP','has_pma':1,'is_tool':0,
+    'is_fixed_asset':0,'ata_chapter':'49-00',
+    'sales_price_sar':50.0,'weight_kg':2.0
 }
 
-col1, col2, col3 = st.columns(3)
+st.markdown("**📋 Enter Part Attributes**")
+c1, c2, c3 = st.columns(3)
 
-with col1:
+with c1:
     material_type = st.selectbox("Material Type",
-        options=['SP', 'C', 'T', 'M', 'N'],
+        ['SP','C','T','M','N'],
         index=['SP','C','T','M','N'].index(defaults['material_type']),
-        help="SP=Standard Part · C=Component · T=Tool · M=Raw Material · N=Non-aircraft"
-    )
+        help="SP=Standard Part · C=Component · T=Tool · M=Raw Material · N=Non-aircraft")
     has_pma = st.selectbox("Manufacturer Approval (PMA)",
-        options=[1, 0],
-        index=[1,0].index(defaults['has_pma']),
-        format_func=lambda x: "✅ Has PMA" if x == 1 else "❌ No PMA"
-    )
+        [1,0], index=[1,0].index(defaults['has_pma']),
+        format_func=lambda x: "✅ Has PMA" if x==1 else "❌ No PMA")
 
-with col2:
+with c2:
     ata_chapter = st.selectbox("ATA Chapter",
-        options=['00-00', '32-00', '49-00', '72-00', '97-97', '99-01'],
+        ['00-00','32-00','49-00','72-00','97-97','99-01'],
         index=['00-00','32-00','49-00','72-00','97-97','99-01'].index(defaults['ata_chapter']),
-        help="Aircraft system classification code"
-    )
+        help="Aircraft system classification code")
     is_tool = st.selectbox("Is this a tool?",
-        options=[0, 1],
-        index=[0,1].index(defaults['is_tool']),
-        format_func=lambda x: "🔧 Yes — it is a tool" if x == 1 else "No — it is a part"
-    )
+        [0,1], index=[0,1].index(defaults['is_tool']),
+        format_func=lambda x: "🔧 Yes — it is a tool" if x==1 else "No — it is a part")
 
-with col3:
+with c3:
     sales_price_sar = st.number_input("Sales Price (SAR)",
         min_value=0.0, max_value=10000.0,
-        value=float(defaults['sales_price_sar']), step=1.0
-    )
+        value=float(defaults['sales_price_sar']), step=1.0)
     weight_kg = st.number_input("Weight (kg)",
         min_value=0.0, max_value=500.0,
-        value=float(defaults['weight_kg']), step=0.1
-    )
+        value=float(defaults['weight_kg']), step=0.1)
     is_fixed_asset = st.selectbox("Fixed Asset?",
-        options=[0, 1],
-        index=[0,1].index(defaults['is_fixed_asset']),
-        format_func=lambda x: "Yes — tracked as fixed asset" if x == 1 else "No"
-    )
+        [0,1], index=[0,1].index(defaults['is_fixed_asset']),
+        format_func=lambda x: "Yes" if x==1 else "No")
 
-st.markdown("<div style='margin:1.5rem 0'></div>", unsafe_allow_html=True)
-
-# ── Predict Button ────────────────────────────────────────
+st.markdown("&nbsp;", unsafe_allow_html=True)
 predict_clicked = st.button("🔍 Predict Repairability", use_container_width=True)
 
 # ── Result ────────────────────────────────────────────────
 if predict_clicked or preset:
     input_df = pd.DataFrame([{
-        'material_type': material_type,
-        'has_pma': has_pma,
-        'is_tool': is_tool,
-        'is_fixed_asset': is_fixed_asset,
-        'ata_chapter': ata_chapter,
-        'sales_price_sar': sales_price_sar,
+        'material_type': material_type, 'has_pma': has_pma,
+        'is_tool': is_tool, 'is_fixed_asset': is_fixed_asset,
+        'ata_chapter': ata_chapter, 'sales_price_sar': sales_price_sar,
         'weight_kg': weight_kg
     }])
 
     prediction = model.predict(input_df)[0]
     probability = model.predict_proba(input_df)[0]
-    conf_repairable = probability[1] * 100
-    conf_unrepairable = probability[0] * 100
-    confidence = probability[prediction] * 100
+    conf_rep = probability[1] * 100
+    conf_unr = probability[0] * 100
 
-    st.markdown("<div style='margin:2rem 0 1rem 0'></div>", unsafe_allow_html=True)
-    st.markdown('<span class="section-label">🎯 Prediction Result</span>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("**🎯 Prediction Result**")
 
-    res_col, conf_col = st.columns([1, 1])
+    r1, r2 = st.columns(2)
 
-    with res_col:
+    with r1:
         if prediction == 1:
             st.markdown(f"""
-            <div class="result-repairable">
+            <div class="result-green">
                 <div style="font-size:2.5rem">✅</div>
-                <div class="result-label result-label-green">REPAIRABLE</div>
-                <div class="result-desc">
-                    Based on the part's attributes, the model predicts this part 
-                    is worth repairing rather than discarding as a consumable.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                <div class="result-title-green">REPAIRABLE</div>
+                <div class="result-desc">This part is likely worth repairing rather than discarding as a consumable.</div>
+            </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div class="result-unrepairable">
+            <div class="result-red">
                 <div style="font-size:2.5rem">❌</div>
-                <div class="result-label result-label-red">UNREPAIRABLE</div>
-                <div class="result-desc">
-                    Based on the part's attributes, the model predicts this part 
-                    is treated as a one-time-use consumable — not worth repairing.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                <div class="result-title-red">UNREPAIRABLE</div>
+                <div class="result-desc">This part is likely treated as a one-time-use consumable — not worth repairing.</div>
+            </div>""", unsafe_allow_html=True)
 
-    with conf_col:
-        st.markdown(f"""
-        <div style="background:#1a1f2e; border:1px solid #2563eb20; border-radius:12px; padding:1.5rem;">
-            <div class="sidebar-title">📊 Confidence Breakdown</div>
-
-            <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:0.3rem;">
-                Repairable
-            </div>
-            <div class="conf-bar-container">
-                <div class="conf-bar-fill-green" style="width:{conf_repairable:.0f}%"></div>
-            </div>
-            <div class="conf-label">
-                <span>Probability</span>
-                <span style="color:#4ade80; font-weight:700">{conf_repairable:.1f}%</span>
-            </div>
-
-            <div style="margin-top:1rem; font-size:0.82rem; color:#94a3b8; margin-bottom:0.3rem;">
-                Unrepairable
-            </div>
-            <div class="conf-bar-container">
-                <div class="conf-bar-fill-red" style="width:{conf_unrepairable:.0f}%"></div>
-            </div>
-            <div class="conf-label">
-                <span>Probability</span>
-                <span style="color:#f87171; font-weight:700">{conf_unrepairable:.1f}%</span>
-            </div>
-
-            <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid #2563eb15;
-                        font-size:0.78rem; color:#64748b; line-height:1.6;">
-                The model assigns a probability to each class based on how closely 
-                this part's attributes match patterns learned during training.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    with r2:
+        st.markdown("**📊 Confidence Breakdown**")
+        st.markdown(f"Repairable — **{conf_rep:.1f}%**")
+        st.markdown(f"""<div class="bar-wrap"><div class="bar-green" style="width:{conf_rep:.0f}%"></div></div>""",
+                    unsafe_allow_html=True)
+        st.markdown(f"Unrepairable — **{conf_unr:.1f}%**")
+        st.markdown(f"""<div class="bar-wrap"><div class="bar-red" style="width:{conf_unr:.0f}%"></div></div>""",
+                    unsafe_allow_html=True)
+        st.caption("The model assigns a probability to each class based on how closely this part's attributes match patterns learned during training.")
 
     # ── Why this prediction ───────────────────────────────
-    st.markdown("<div style='margin:1.5rem 0 0.5rem 0'></div>", unsafe_allow_html=True)
-    st.markdown('<span class="section-label">🧠 Why This Prediction?</span>', unsafe_allow_html=True)
+    st.markdown("**🧠 Why This Prediction?**")
 
-    # Build influence tags based on actual input values
     tags = []
     if sales_price_sar > 40:
-        tags.append(('positive', f'💰 Price {sales_price_sar:.0f} SAR > 40 SAR threshold → pushes toward Repairable'))
+        tags.append(('pos', f'💰 Price {sales_price_sar:.0f} SAR > 40 SAR threshold → pushes toward Repairable'))
     else:
-        tags.append(('negative', f'💰 Price {sales_price_sar:.0f} SAR ≤ 40 SAR → pushes toward Unrepairable'))
+        tags.append(('neg', f'💰 Price {sales_price_sar:.0f} SAR ≤ 40 SAR → pushes toward Unrepairable'))
 
     if has_pma == 1:
-        tags.append(('positive', '✅ Has manufacturer approval (PMA) → pushes toward Repairable'))
+        tags.append(('pos', '✅ Has manufacturer approval (PMA) → pushes toward Repairable'))
     else:
-        tags.append(('negative', '❌ No manufacturer approval → pushes toward Unrepairable'))
+        tags.append(('neg', '❌ No manufacturer approval → pushes toward Unrepairable'))
 
-    if material_type in ['C', 'SP']:
-        tags.append(('positive', f'📦 Material type {material_type} (Component/Standard Part) → pushes toward Repairable'))
+    if material_type in ['C','SP']:
+        tags.append(('pos', f'📦 Material type {material_type} → pushes toward Repairable'))
     else:
-        tags.append(('neutral', f'📦 Material type {material_type} → neutral or slight push toward Unrepairable'))
+        tags.append(('neu', f'📦 Material type {material_type} → neutral or slight push toward Unrepairable'))
 
     if is_tool == 1:
-        tags.append(('negative', '🔧 Classified as a tool → strong push toward Unrepairable (overrides other factors)'))
+        tags.append(('neg', '🔧 Classified as a tool → strong override toward Unrepairable'))
     else:
-        tags.append(('neutral', '✓ Not a tool → no penalty applied'))
+        tags.append(('neu', '✓ Not a tool → no penalty'))
 
-    tag_html = ""
-    for tag_type, tag_text in tags:
-        tag_html += f'<div class="tag-{tag_type}">{tag_text}</div>'
+    tag_html = "".join([
+        f'<span class="tag-pos">{t}</span>' if k=='pos'
+        else f'<span class="tag-neg">{t}</span>' if k=='neg'
+        else f'<span class="tag-neu">{t}</span>'
+        for k, t in tags
+    ])
 
-    st.markdown(f"""
-    <div style="background:#1a1f2e; border:1px solid #2563eb20; border-radius:12px; padding:1.5rem;">
-        <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem; line-height:1.6;">
-            The model uses a scoring system based on four key attributes. 
-            Here is how your part's inputs influenced the prediction:
-        </div>
-        {tag_html}
-        <div style="margin-top:1rem; font-size:0.75rem; color:#475569; 
-                    padding-top:0.75rem; border-top:1px solid #2563eb10;">
-            Note: ATA Chapter, weight, and fixed asset status also contribute to the model's 
-            internal tree decisions, though their influence is smaller than the four factors above.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(tag_html, unsafe_allow_html=True)
+    st.caption("Note: ATA Chapter, weight, and fixed asset status also contribute to the model's internal decisions, though their influence is smaller than the four factors above.")
 
 # ── Footer ────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-    Built by <a href="https://www.linkedin.com/in/raghadbaeshen">Raghad Baeshen</a> 
-    — IT Specialist in aviation MRO, exploring AI for enterprise operations.<br>
-    All data is synthetic. Model: Random Forest · Accuracy: 88% · CV F1: 0.891 ± 0.023<br>
+    Built by <a href="https://www.linkedin.com/in/raghadbaeshen">Raghad Baeshen</a> — 
+    IT Specialist in aviation MRO, exploring AI for enterprise operations.<br>
+    All data is synthetic · Random Forest · Accuracy: 88% · CV F1: 0.891 ± 0.023<br>
     <a href="https://github.com/raghaddbae/aviation-parts-repairability-classifier">View full project on GitHub →</a>
 </div>
 """, unsafe_allow_html=True)
